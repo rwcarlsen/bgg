@@ -51,13 +51,14 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := &Items{}
-	err = xml.Unmarshal(data, &items)
+	game := &Raw{}
+	err = xml.Unmarshal(data, &game)
 	if err != nil {
 		http.Error(w, "failed to parse game data", http.StatusInternalServerError)
 		log.Print(err)
 		return
 	}
 
-	fmt.Fprintf(w, "%+v", items)
+	fmt.Fprintf(w, "%+v", game)
+	//fmt.Fprintf(w, "%s", data)
 }

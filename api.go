@@ -2,8 +2,8 @@ package main
 
 import "encoding/xml"
 
-type Items struct {
-	Game Game
+type Raw struct {
+	Game Game `xml:"item"`
 }
 
 type Game struct {
@@ -19,20 +19,18 @@ type Game struct {
 	PlayingTime   AttrVal  `xml:"playingtime"`
 	MinAge        AttrVal  `xml:"minage"`
 	Links         []Link   `xml:"link"`
-	Ratings       Ratings  `xml:"statistics"`
+	Ratings       Ratings  `xml:"statistics>ratings"`
 }
 
 type Link struct {
-	XMLName xml.Name `xml:"link"`
-	Type    string   `xml:"type,attr"`
-	Id      string   `xml:"id,attr"`
-	Value   string   `xml:"value,attr"`
+	Type  string `xml:"type,attr"`
+	Id    string `xml:"id,attr"`
+	Value string `xml:"value,attr"`
 }
 
 type Name struct {
-	XMLName xml.Name `xml:"name"`
-	Type    string   `xml:"type,attr"`
-	Name    string   `xml:"value,attr"`
+	Type string `xml:"type,attr"`
+	Name string `xml:"value,attr"`
 }
 
 type AttrVal struct {
@@ -46,6 +44,11 @@ type Ratings struct {
 	Stddev     AttrVal  `xml:"stddev"`
 	//Ranks      []Rank   `xml:ranks`
 }
+
+//type Ratings struct {
+//	Data RatingsInner `xml:"ratings"`
+//	Page string       `xml:"page,attr"`
+//}
 
 /*
 <?xml version="1.0" encoding="utf-8"?>
