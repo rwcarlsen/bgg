@@ -9,12 +9,25 @@ const gamePage = `
 </head>
 <body lang="en">
 
+<br>
+
+<img src="{{.ImagePath}}" style="width:250px">
+
+<br>
+
 <h2>{{.Name}}</h2>
+<i><b>{{.AverageRating}} average rating ({{.NUsersRated}} reviews), rank {{.Rank}}</b></i>
+
+<br>
 
 <p>{{.Description}}</p>
 
-<image>
-    
+<ul>
+<li>{{.MinPlayers}} to {{.MaxPlayers}} players</li>
+<li>{{.PlayTime}} play-time</li>
+<li>Min. age {{.MinAge}} years</li>
+</ul>
+
 </body>
 </html>
 `

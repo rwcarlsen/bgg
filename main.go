@@ -3,11 +3,11 @@ package main
 import (
 	"encoding/xml"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
+	"text/template"
 
 	"github.com/gorilla/mux"
 )
@@ -51,14 +51,25 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	game := &Root{}
-	err = xml.Unmarshal(data, &game)
+	root := &Root{}
+	err = xml.Unmarshal(data, &root)
 	if err != nil {
 		http.Error(w, "failed to parse game data", http.StatusInternalServerError)
 		log.Print(err)
 		return
 	}
 
-	fmt.Fprintf(w, "%+v", game)
-	//fmt.Fprintf(w, "%s", data)
+	game, err := NewGame(&root.Game)
+	if err != nil {
+		http.Error(w, "failed to generate game struct", http.StatusInternalServerError)
+		log.Print(err)
+		return
+	}
+
+	err = template.Must(template.New("gamepage").Parse(gamePage)).Execute(w, game)
+	if err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+		log.Print(err)
+		return
+	}
 }
