@@ -1,55 +1,6 @@
 package main
 
-type Root struct {
-	Game Game `xml:"item"`
-}
-
-type Game struct {
-	Id            string  `xml:"id,attr"`
-	ThumbPath     string  `xml:"thumbnail"`
-	ImagePath     string  `xml:"image"`
-	Name          []Name  `xml:"name"`
-	MinPlayers    AttrVal `xml:"minplayers"`
-	MaxPlayers    AttrVal `xml:"maxplayers"`
-	YearPublished AttrVal `xml:"yearpublished"`
-	Description   AttrVal `xml:"description"`
-	PlayingTime   AttrVal `xml:"playingtime"`
-	MinAge        AttrVal `xml:"minage"`
-	Links         []Link  `xml:"link"`
-	Ratings       Ratings `xml:"statistics>ratings"`
-}
-
-type Link struct {
-	Type  string `xml:"type,attr"`
-	Id    string `xml:"id,attr"`
-	Value string `xml:"value,attr"`
-}
-
-type Name struct {
-	Type string `xml:"type,attr"`
-	Name string `xml:"value,attr"`
-}
-
-type AttrVal struct {
-	Val string `xml:"value,attr"`
-}
-
-type Ratings struct {
-	UsersRated AttrVal `xml:"usersrated"`
-	Average    AttrVal `xml:"average"`
-	Stddev     AttrVal `xml:"stddev"`
-	Ranks      []Rank  `xml:"ranks>rank"`
-}
-
-type Rank struct {
-	Type         string `xml:"type,attr"`
-	Id           string `xml:"id,attr"`
-	Name         string `xml:"name,attr"`
-	FriendlyName string `xml:"friendlyname,attr"`
-	Value        string `xml:"value,attr"`
-}
-
-/*
+const netrunner = `
 <?xml version="1.0" encoding="utf-8"?>
 <items termsofuse="http://boardgamegeek.com/xmlapi/termsofuse">
   <item type="boardgame" id="124742">
@@ -91,4 +42,4 @@ type Rank struct {
     </statistics>
   </item>
 </items>
-*/
+`
