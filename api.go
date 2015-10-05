@@ -1,14 +1,113 @@
 package main
 
-type Root struct {
-	Game Game `xml:"item"`
-}
+import (
+	"strconv"
+	"strings"
+	"time"
+)
 
 type Game struct {
+	Id            int
+	Name          string
+	ThumbPath     string
+	ImagePath     string
+	MinPlayers    int
+	MaxPlayers    int
+	YearPublished int
+	Description   string
+	PlayTime      time.Duration
+	MinAge        int
+	Links         []Link
+	NUsersRated   int
+	AverageRating float64
+	RatingStddev  float64
+	Rank          int
+}
+
+func NewGame(raw *RawGame) (*Game, error) {
+	var err error
+	g := &Game{
+		ThumbPath:   raw.ThumbPath,
+		ImagePath:   raw.ImagePath,
+		Description: raw.Description.Val,
+		Links:       raw.Links,
+	}
+
+	g.Id, err = strconv.Atoi(raw.Id)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, name := range raw.Names {
+		if strings.ToLower(name.Type) == "primary" {
+			g.Name = name.Name
+			break
+		}
+	}
+
+	g.MinPlayers, err = strconv.Atoi(raw.MinPlayers.Val)
+	if err != nil {
+		return nil, err
+	}
+
+	g.MaxPlayers, err = strconv.Atoi(raw.MaxPlayers.Val)
+	if err != nil {
+		return nil, err
+	}
+
+	g.MinAge, err = strconv.Atoi(raw.MinAge.Val)
+	if err != nil {
+		return nil, err
+	}
+
+	g.YearPublished, err = strconv.Atoi(raw.YearPublished.Val)
+	if err != nil {
+		return nil, err
+	}
+
+	v, err := strconv.Atoi(raw.PlayingTime.Val)
+	if err != nil {
+		return nil, err
+	}
+	g.PlayTime = time.Duration(v) * time.Minute
+
+	g.NUsersRated, err = strconv.Atoi(raw.Ratings.UsersRated.Val)
+	if err != nil {
+		return nil, err
+	}
+
+	g.AverageRating, err = strconv.ParseFloat(raw.Ratings.Average.Val, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	g.RatingStddev, err = strconv.ParseFloat(raw.Ratings.Stddev.Val, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, rank := range raw.Ratings.Ranks {
+		if rank.Name == "boardgame" {
+			g.Rank, err = strconv.Atoi(rank.Value)
+			if err != nil {
+				return nil, err
+			}
+			break
+		}
+	}
+
+	return g, nil
+}
+
+type Root struct {
+	Game RawGame `xml:"item"`
+}
+
+type RawGame struct {
 	Id            string  `xml:"id,attr"`
 	ThumbPath     string  `xml:"thumbnail"`
 	ImagePath     string  `xml:"image"`
-	Name          []Name  `xml:"name"`
+	Names         []Name  `xml:"name"`
 	MinPlayers    AttrVal `xml:"minplayers"`
 	MaxPlayers    AttrVal `xml:"maxplayers"`
 	YearPublished AttrVal `xml:"yearpublished"`

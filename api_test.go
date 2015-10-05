@@ -1,5 +1,26 @@
 package main
 
+import (
+	"encoding/xml"
+	"log"
+	"testing"
+)
+
+func TestAPI(t *testing.T) {
+	v := &Root{}
+	err := xml.Unmarshal([]byte(netrunner), &v)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	g, err := NewGame(&v.Game)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Logf("%+v\n", g)
+}
+
 const netrunner = `
 <?xml version="1.0" encoding="utf-8"?>
 <items termsofuse="http://boardgamegeek.com/xmlapi/termsofuse">
