@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestAPI(t *testing.T) {
+func TestGameParse(t *testing.T) {
 	v := &Root{}
 	err := xml.Unmarshal([]byte(netrunner), &v)
 	if err != nil {
@@ -20,6 +20,33 @@ func TestAPI(t *testing.T) {
 
 	t.Logf("%+v\n", g)
 }
+
+func TestSearchParse(t *testing.T) {
+	v := &RootSearch{}
+	err := xml.Unmarshal([]byte(testsearch), &v)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	t.Logf("%+v\n", v.Search)
+}
+
+const testsearch = `
+<items total="67" termsofuse="http://boardgamegeek.com/xmlapi/termsofuse">
+  <item type="boardgame" id="124742">
+    <name type="primary" value="Android: Netrunner"/>
+    <yearpublished value="2012"/>
+  </item>
+  <item type="boardgame" id="135103">
+    <name type="primary" value="Android: Netrunner – A Study in Static"/>
+    <yearpublished value="2013"/>
+  </item>
+  <item type="boardgame" id="160683">
+    <name type="primary" value="Android: Netrunner – All That Remains"/>
+    <yearpublished value="2014"/>
+  </item>
+</items>
+`
 
 const netrunner = `
 <?xml version="1.0" encoding="utf-8"?>

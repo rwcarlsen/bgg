@@ -1,18 +1,24 @@
 package main
 
 import (
+	"bytes"
 	"encoding/xml"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
+	"net/url"
+	"strconv"
 	"text/template"
 
 	"github.com/gorilla/mux"
 )
 
-const gameQuery = "http://www.boardgamegeek.com/xmlapi2/thing?id={gameid}&stats=1&ratingcomments=1"
+const (
+	gameQuery   = "http://www.boardgamegeek.com/xmlapi2/thing?id={gameid}&stats=1&ratingcomments=1"
+	searchQuery = "http://www.boardgamegeek.com/xmlapi2/search"
+)
 
 var (
 	addr = flag.String("addr", "127.0.0.1:8181", "`host:port` to listen on")
@@ -23,6 +29,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/game/{gameid}", handleGame)
+	r.HandleFunc("/search", handleSearch)
 
 	http.Handle("/", r)
 	err := http.ListenAndServe(":8181", r)
@@ -31,45 +38,77 @@ func main() {
 	}
 }
 
-func handleGame(w http.ResponseWriter, r *http.Request) {
-	gameid := mux.Vars(r)["gameid"]
-	gameurl := strings.Replace(gameQuery, "{gameid}", gameid, -1)
-	log.Print("requesting game info from url " + gameurl)
+func handleSearch(w http.ResponseWriter, r *http.Request) {
+	// build search request to send to BGG
+	query := r.FormValue("query")
 
-	resp, err := http.Get(gameurl)
+	form := url.Values{}
+	form.Set("query", query)
+	u, _ := url.ParseRequestURI(searchQuery)
+	urlstr := fmt.Sprint(u)
+
+	fmt.Println(urlstr)
+
+	client := &http.Client{}
+	req, _ := http.NewRequest("POST", urlstr, bytes.NewBufferString(form.Encode()))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	// send request and parse data
+	resp, err := client.Do(req)
 	if err != nil {
-		http.Error(w, "could not retrieve raw game info", http.StatusNotFound)
-		log.Print(err)
+		httperr(w, "failed to run BGG search", err)
 		return
 	}
 	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		http.Error(w, "could not download game data", http.StatusInternalServerError)
-		log.Print(err)
+		httperr(w, "could not download search data", err)
 		return
 	}
 
-	root := &Root{}
+	root := &RootSearch{}
 	err = xml.Unmarshal(data, &root)
 	if err != nil {
-		http.Error(w, "failed to parse game data", http.StatusInternalServerError)
-		log.Print(err)
+		httperr(w, "failed to parse search data", err)
 		return
 	}
 
-	game, err := NewGame(&root.Game)
+	games, err := NewSearchList(root.Search)
 	if err != nil {
-		http.Error(w, "failed to generate game struct", http.StatusInternalServerError)
-		log.Print(err)
+		httperr(w, "failed to retrieve game details", err)
 		return
 	}
 
-	err = template.Must(template.New("gamepage").Parse(gamePage)).Execute(w, game)
+	err = template.Must(template.New("searchpage").Parse(searchPage)).Execute(w, games)
 	if err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
-		log.Print(err)
+		httperr(w, "template error", err)
+		return
+	}
+}
+
+func httperr(w http.ResponseWriter, msg string, err error) {
+	http.Error(w, msg, http.StatusInternalServerError)
+	log.Print(msg+":", err)
+	return
+}
+
+func handleGame(w http.ResponseWriter, r *http.Request) {
+	gameid, err := strconv.Atoi(mux.Vars(r)["gameid"])
+	if err != nil {
+		httperr(w, "invalid game id", err)
+		return
+	}
+
+	g, err := RetrieveGame(gameid)
+	if err != nil {
+		httperr(w, "ERROR", err)
+		return
+	}
+
+	err = template.Must(template.New("gamepage").Parse(gamePage)).Execute(w, g)
+	if err != nil {
+		httperr(w, "template error", err)
 		return
 	}
 }

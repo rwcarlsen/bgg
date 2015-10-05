@@ -1,10 +1,81 @@
 package main
 
 import (
+	"encoding/xml"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+type RootSearch struct {
+	Search []SearchRaw `xml:"item"`
+}
+
+type SearchRaw struct {
+	Id int `xml:"id,attr"`
+}
+
+type SearchList []*Game
+
+func NewSearchList(s []SearchRaw) (SearchList, error) {
+	var wg sync.WaitGroup
+	wg.Add(len(s))
+
+	list := make(SearchList, len(s))
+	for i, item := range s {
+		go func(index int, id int) {
+			var err error
+			fmt.Println("storing", id, " in index ", index)
+			list[index], err = RetrieveGame(id)
+			//list[index], err = RetrieveGame(id)
+			if err != nil {
+				log.Print(err)
+			}
+			wg.Done()
+		}(i, item.Id)
+	}
+	wg.Wait()
+
+	games := []*Game{}
+	for _, game := range list {
+		if game != nil {
+			games = append(games, game)
+		}
+	}
+	return games, nil
+}
+
+func RetrieveGame(id int) (*Game, error) {
+	gameurl := strings.Replace(gameQuery, "{gameid}", strconv.Itoa(id), -1)
+
+	resp, err := http.Get(gameurl)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve game info: %v", err)
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("could not download game data: %v", err)
+	}
+
+	root := &Root{}
+	err = xml.Unmarshal(data, &root)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse game data: %v", err)
+	}
+
+	game, err := NewGame(&root.Game)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate game struct: %v", err)
+	}
+	return game, nil
+}
 
 type Game struct {
 	Id            int
@@ -14,7 +85,7 @@ type Game struct {
 	MinPlayers    int
 	MaxPlayers    int
 	YearPublished int
-	Description   string
+	Description   []string
 	PlayTime      time.Duration
 	MinAge        int
 	Links         []Link
@@ -37,7 +108,7 @@ func NewGame(raw *RawGame) (*Game, error) {
 	g := &Game{
 		ThumbPath:   imgpath(raw.ThumbPath),
 		ImagePath:   imgpath(raw.ImagePath),
-		Description: strings.Replace(raw.Description, "&#10;", "</p><p>", -1),
+		Description: strings.Split(raw.Description, "&#10;"),
 		Links:       raw.Links,
 	}
 
@@ -55,50 +126,50 @@ func NewGame(raw *RawGame) (*Game, error) {
 
 	g.MinPlayers, err = strconv.Atoi(raw.MinPlayers.Val)
 	if err != nil {
-		return nil, err
+		log.Print(err)
 	}
 
 	g.MaxPlayers, err = strconv.Atoi(raw.MaxPlayers.Val)
 	if err != nil {
-		return nil, err
+		log.Print(err)
 	}
 
 	g.MinAge, err = strconv.Atoi(raw.MinAge.Val)
 	if err != nil {
-		return nil, err
+		log.Print(err)
 	}
 
 	g.YearPublished, err = strconv.Atoi(raw.YearPublished.Val)
 	if err != nil {
-		return nil, err
+		log.Print(err)
 	}
 
 	v, err := strconv.Atoi(raw.PlayingTime.Val)
 	if err != nil {
-		return nil, err
+		log.Print(err)
 	}
 	g.PlayTime = time.Duration(v) * time.Minute
 
 	g.NUsersRated, err = strconv.Atoi(raw.Ratings.UsersRated.Val)
 	if err != nil {
-		return nil, err
+		log.Print(err)
 	}
 
 	g.AverageRating, err = strconv.ParseFloat(raw.Ratings.Average.Val, 64)
 	if err != nil {
-		return nil, err
+		log.Print(err)
 	}
 
 	g.RatingStddev, err = strconv.ParseFloat(raw.Ratings.Stddev.Val, 64)
 	if err != nil {
-		return nil, err
+		log.Print(err)
 	}
 
 	for _, rank := range raw.Ratings.Ranks {
 		if rank.Name == "boardgame" {
 			g.Rank, err = strconv.Atoi(rank.Value)
 			if err != nil {
-				return nil, err
+				log.Print(err)
 			}
 			break
 		}
