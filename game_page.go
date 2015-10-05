@@ -169,9 +169,9 @@ const searchPage = `
 		{{ range . }}
 		
 			<tr class="searchrow">
-			    <td style="text-align: center;"> <a href="/game/{{.Id}}"><img src="{{.ThumbPath}}" style="height:70px"></a></td>
-				<td style="text-align: left"> <a href="/game/{{.Id}}">{{.Name}}</a> </td>
-				<td style="text-align: center"> {{.Rank}} </td>
+				<td style="text-align: center;"> <a href="/game/{{.Id}}"><img src="{{.ThumbPath}}" style="maxheight:70px; maxwidth:70px;"></a></td>
+				<td style="text-align: left"> <a href="/game/{{.Id}}">{{.Name}} ({{.YearPublished}})</a> </td>
+				<td style="text-align: center"> {{if gt .Rank 0}} {{.Rank}} {{end}}</td>
 				<td style="text-align: left"> {{.AverageRating}} <br> ({{.NUsersRated}} users) </td>
 			</tr>
 		</a>
@@ -185,7 +185,7 @@ const searchPage = `
 
 const tablecss = `
 table {
-	width:80%;
+	width:100%;
 	border-color:#a9a9a9;
 	color:#333333;
 	border-collapse:collapse;
@@ -202,6 +202,8 @@ th {
 	text-align:left;
 }
 tr {
+	maxwidth=50px;
+	height=70px;
 	background-color:#ffffff;
 	text-align:left;
 }

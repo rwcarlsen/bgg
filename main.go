@@ -100,9 +100,10 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println("getting game ", gameid)
 	g, err := RetrieveGame(gameid)
 	if err != nil {
-		httperr(w, "ERROR", err)
+		httperr(w, "failed to get game info", err)
 		return
 	}
 

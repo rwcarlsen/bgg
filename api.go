@@ -17,7 +17,9 @@ type RootSearch struct {
 }
 
 type SearchRaw struct {
-	Id int `xml:"id,attr"`
+	Id            int     `xml:"id,attr"`
+	Name          AttrVal `xml:"name"`
+	YearPublished AttrVal `xml:"yearpublished"`
 }
 
 type SearchList []*Game
@@ -28,26 +30,20 @@ func NewSearchList(s []SearchRaw) (SearchList, error) {
 
 	list := make(SearchList, len(s))
 	for i, item := range s {
-		go func(index int, id int) {
+		go func(index int, item SearchRaw) {
 			var err error
-			fmt.Println("storing", id, " in index ", index)
-			list[index], err = RetrieveGame(id)
-			//list[index], err = RetrieveGame(id)
+			list[index], err = RetrieveGame(item.Id)
 			if err != nil {
+				year, _ := strconv.Atoi(item.YearPublished.Val)
 				log.Print(err)
+				list[index] = &Game{Id: item.Id, Name: item.Name.Val, YearPublished: year}
 			}
 			wg.Done()
-		}(i, item.Id)
+		}(i, item)
 	}
 	wg.Wait()
 
-	games := []*Game{}
-	for _, game := range list {
-		if game != nil {
-			games = append(games, game)
-		}
-	}
-	return games, nil
+	return list, nil
 }
 
 func RetrieveGame(id int) (*Game, error) {
