@@ -6,11 +6,66 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
+
+var topgame = regexp.MustCompile(`href="/boardgame/([0-9]+)`)
+var starttbl = regexp.MustCompile(`Board Game Rank`)
+
+func GetTopRanked() ([]*Game, error) {
+	resp, err := http.Get("http://boardgamegeek.com/browse/boardgame")
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	start := starttbl.FindIndex(data)[0]
+	data = data[start:]
+	idstrs := topgame.FindAllSubmatch(data, -1)
+	ids := []int{}
+
+	for _, match := range idstrs {
+		id, err := strconv.Atoi(string(match[1]))
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+
+	uniqids := []int{}
+	for i, id := range ids {
+		if i%2 == 0 {
+			uniqids = append(uniqids, id)
+		}
+	}
+	ids = uniqids
+
+	var wg sync.WaitGroup
+	wg.Add(len(ids))
+	games := make([]*Game, len(ids))
+	for i, id := range ids {
+		go func(i, id int) {
+			defer wg.Done()
+			var err error
+			games[i], err = RetrieveGame(id)
+			if err != nil {
+				log.Print(err)
+				games[i] = &Game{Id: id, Name: strconv.Itoa(id)}
+			}
+		}(i, id)
+	}
+	wg.Wait()
+	return games, nil
+}
 
 type RootSearch struct {
 	Search []SearchRaw `xml:"item"`
@@ -31,6 +86,7 @@ func NewSearchList(s []SearchRaw) (SearchList, error) {
 	list := make(SearchList, len(s))
 	for i, item := range s {
 		go func(index int, item SearchRaw) {
+			defer wg.Done()
 			var err error
 			list[index], err = RetrieveGame(item.Id)
 			if err != nil {
@@ -38,7 +94,6 @@ func NewSearchList(s []SearchRaw) (SearchList, error) {
 				log.Print(err)
 				list[index] = &Game{Id: item.Id, Name: item.Name.Val, YearPublished: year}
 			}
-			wg.Done()
 		}(i, item)
 	}
 	wg.Wait()

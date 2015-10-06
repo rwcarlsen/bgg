@@ -30,11 +30,26 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/game/{gameid}", handleGame)
 	r.HandleFunc("/search", handleSearch)
+	r.HandleFunc("/", handleMain)
 
 	http.Handle("/", r)
 	err := http.ListenAndServe(":8181", r)
 	if err != nil {
 		log.Fatal(err)
+	}
+}
+
+func handleMain(w http.ResponseWriter, r *http.Request) {
+	games, err := GetTopRanked()
+	if err != nil {
+		httperr(w, "failed to retrieve top rated games", err)
+		return
+	}
+
+	err = template.Must(template.New("toprankpage").Parse(mainPage)).Execute(w, games)
+	if err != nil {
+		httperr(w, "template error", err)
+		return
 	}
 }
 

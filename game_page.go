@@ -106,7 +106,7 @@ const menu = `
 	</div>
 
     <ul>
-        <li><a href="/">List by Rating</a></li>
+        <li><a href="/">List by Rank</a></li>
         <li><a href="/game/124742">Android Netrunner</a></li>
     </ul>
 </div>
@@ -172,6 +172,40 @@ const searchPage = `
 				<td style="text-align: center;"> <a href="/game/{{.Id}}"><img src="{{.ThumbPath}}" style="maxheight:70px; maxwidth:70px;"></a></td>
 				<td style="text-align: left"> <a href="/game/{{.Id}}">{{.Name}} ({{.YearPublished}})</a> </td>
 				<td style="text-align: center"> {{if gt .Rank 0}} {{.Rank}} {{end}}</td>
+				<td style="text-align: left"> {{.AverageRating}} <br> ({{.NUsersRated}} users) </td>
+			</tr>
+		</a>
+		{{ end }}
+	</table>
+</div>
+
+</body>
+</html>
+`
+
+const mainPage = `
+<!DOCTYPE html>
+<html class="no-js" lang="en-US">
+<head>
+	<title>pBGG</title>
+    <style type="text/css">
+	` + cssstyle + tablecss + `
+    </style>
+</head>
+<body lang="en">
+
+` + menu + `
+
+<div class="searchlist">
+	<table>
+		<tr><th></th><th>Rank</th><th>Name</th><th>Rating</th></tr>
+
+		{{ range . }}
+		
+			<tr class="searchrow">
+				<td style="text-align: center;"> <a href="/game/{{.Id}}"><img src="{{.ThumbPath}}" style="maxheight:70px; maxwidth:70px;"></a></td>
+				<td style="text-align: center"> {{if gt .Rank 0}} {{.Rank}} {{end}}</td>
+				<td style="text-align: left"> <a href="/game/{{.Id}}">{{.Name}} ({{.YearPublished}})</a> </td>
 				<td style="text-align: left"> {{.AverageRating}} <br> ({{.NUsersRated}} users) </td>
 			</tr>
 		</a>

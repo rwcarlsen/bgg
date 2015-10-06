@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/xml"
+	"fmt"
 	"log"
 	"testing"
 )
@@ -29,6 +30,16 @@ func TestSearchParse(t *testing.T) {
 	}
 
 	t.Logf("%+v\n", v.Search)
+}
+
+func TestGetTopRanked(t *testing.T) {
+	games, err := GetTopRanked()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range games {
+		fmt.Printf("%+v\n", g)
+	}
 }
 
 const testsearch = `
